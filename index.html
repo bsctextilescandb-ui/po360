@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSC Textiles — PO Manager</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0f2f5;font-size:13px}
+a{text-decoration:none;color:inherit}
+:root{--navy:#00205b;--red:#e8000d;--green:#2e7d32;--border:#d0d5e8}
+
+/* TOP BAR */
+.topbar{background:var(--navy);color:#fff;padding:0 16px;display:flex;align-items:center;height:46px;gap:0;position:sticky;top:0;z-index:200}
+.topbar-brand{font-size:15px;font-weight:900;letter-spacing:.3px;margin-right:20px;white-space:nowrap}
+.tab-btn{padding:0 16px;height:46px;border:none;background:transparent;color:rgba(255,255,255,.7);font-size:12px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;transition:.15s}
+.tab-btn.active{color:#fff;border-bottom-color:#fff}
+.tab-btn:hover{color:#fff}
+.topbar-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.tbtn{padding:6px 14px;border:none;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.tbtn-green{background:var(--green);color:#fff}
+.tbtn-white{background:#fff;color:var(--navy)}
+.tbtn-red{background:var(--red);color:#fff}
+.tbtn:hover{opacity:.85}
+
+/* PAGES */
+.page{display:none}
+.page.active{display:flex;height:calc(100vh - 46px)}
+
+/* SIDEBAR */
+.sidebar{width:290px;background:#fff;border-right:1px solid var(--border);overflow-y:auto;padding:14px;flex-shrink:0}
+.main-area{flex:1;overflow-y:auto;padding:16px;background:#f0f2f5}
+
+/* HISTORY PAGE */
+.hist-page{display:none;flex-direction:column;height:calc(100vh - 46px)}
+.hist-page.active{display:flex}
+.hist-toolbar{background:#fff;border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px}
+.hist-toolbar input{padding:6px 10px;border:1px solid #ccc;border-radius:4px;font-size:12px;width:220px}
+.hist-list{flex:1;overflow-y:auto;padding:16px}
+.hist-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:.15s}
+.hist-card:hover{border-color:var(--navy);background:#f8f9ff}
+.hist-num{font-size:14px;font-weight:900;color:var(--navy);min-width:160px}
+.hist-meta{flex:1;font-size:11px;color:#666;line-height:1.7}
+.hist-val{font-size:14px;font-weight:700;color:var(--green);text-align:right;min-width:100px}
+.hist-actions{display:flex;gap:6px}
+.hbtn{padding:5px 10px;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer}
+.hbtn-view{background:#e8f0fe;color:var(--navy)}
+.hbtn-del{background:#fee;color:var(--red)}
+.hbtn:hover{opacity:.8}
+.empty-hist{text-align:center;padding:60px 20px;color:#aaa}
+.empty-hist .ei{font-size:48px;margin-bottom:12px}
+
+/* FORM ELEMENTS */
+.s-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#fff;background:var(--navy);padding:4px 8px;border-radius:3px;margin:12px 0 7px}
+.s-title:first-child{margin-top:0}
+label{display:block;font-size:11px;color:#444;margin-bottom:2px;font-weight:600}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;margin-bottom:7px;font-family:Arial;color:#222;background:#fff}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--navy)}
+textarea{resize:vertical;min-height:40px}
+.btn{width:100%;padding:7px;border:none;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-success{background:var(--green);color:#fff}
+.btn-outline{background:#fff;color:var(--navy);border:1.5px solid var(--navy)}
+.btn:hover{opacity:.85}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.row2 input{margin-bottom:0}
+
+/* IMAGE UPLOAD */
+.up-box{border:2px dashed #b0c0ee;border-radius:6px;padding:10px;text-align:center;cursor:pointer;background:#f8f9ff;margin-bottom:8px}
+.up-box:hover{border-color:var(--navy);background:#eef2ff}
+.up-box input{display:none}
+.up-box .up-lbl{font-size:11px;color:#666;cursor:pointer}
+.up-box .up-lbl b{color:var(--navy)}
+.logo-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.logo-thumb{max-height:38px;max-width:90px;border-radius:3px;border:1px solid #ddd}
+.img-thumb{width:52px;height:52px;object-fit:cover;border-radius:4px;border:1px solid #ddd}
+.clr-btn{background:#fee;color:#c00;border:1px solid #fcc;border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer;display:block;margin-top:2px}
+
+/* DEFAULT SIZES */
+.size-defaults{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.sz-chip{display:flex;flex-direction:column;align-items:center;background:#f0f4ff;border:1.5px solid var(--navy);border-radius:5px;padding:3px 5px;min-width:42px;position:relative}
+.sz-chip .sz-label{font-size:10px;font-weight:700;color:var(--navy)}
+.sz-chip input{width:38px;padding:2px 3px;text-align:center;border:1px solid #b0c0ee;border-radius:3px;font-size:11px;margin-top:2px;margin-bottom:0}
+.sz-chip .sz-remove{position:absolute;top:-6px;right:-6px;width:15px;height:15px;background:var(--red);color:#fff;border:none;border-radius:50%;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.sz-inactive{opacity:.35;border-style:dashed;background:#f8f8f8}
+.sz-inactive .sz-label{color:#999}
+.add-sz-row{display:flex;gap:4px;margin-bottom:6px}
+.add-sz-row input{margin-bottom:0;flex:1}
+.add-sz-row button{flex-shrink:0;padding:5px 10px;background:var(--navy);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer}
+
+.tip{background:#fffde7;border:1px solid #f9a825;border-radius:4px;padding:6px 9px;font-size:10px;color:#5d4037;margin-bottom:8px;line-height:1.5}
+
+/* PO PREVIEW */
+.po-card{background:#fff;border-radius:6px;border:1px solid var(--border);padding:18px;max-width:980px}
+.po-hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid var(--navy);padding-bottom:10px;margin-bottom:10px}
+.co-name{font-size:19px;font-weight:900;color:var(--navy)}
+.co-sub{font-size:9.5px;color:#555;margin-top:2px}
+.po-title-right{text-align:right}
+.po-title{font-size:18px;font-weight:900;color:var(--navy)}
+.po-numline{font-size:12px;font-weight:700;color:#333;margin-top:2px}
+.po-dateline{font-size:10px;color:#666}
+.meta-strip{display:flex;border:1px solid #ccc;border-radius:4px;overflow:hidden;margin-bottom:8px}
+.mc{flex:1;padding:5px 7px;border-right:1px solid #ddd}
+.mc:last-child{border-right:none}
+.ml{font-size:7.5px;color:#888;text-transform:uppercase;letter-spacing:.4px}
+.mv{font-size:12px;font-weight:700;color:var(--navy);margin-top:1px}
+.pos-bar{background:#f0f4ff;border:1px solid #b0c0ee;border-radius:4px;padding:6px 10px;margin-bottom:8px;font-size:10px}
+.prod-table{width:100%;border-collapse:collapse;font-size:9.5px;margin-bottom:8px}
+.prod-table thead tr{background:var(--navy)}
+.prod-table th{color:#fff;padding:5px 4px;text-align:center;white-space:nowrap;font-size:9px}
+.prod-table td{padding:6px 4px;text-align:center;border-bottom:1px solid #eee;vertical-align:middle}
+.prod-table tr:nth-child(even) td{background:#f8f9ff}
+.prod-img{width:130px;height:130px;object-fit:contain;background:#fff;border-radius:4px;border:1px solid #ddd;display:block;margin:auto}
+.no-img{width:130px;height:130px;background:#f0f0f0;border-radius:4px;border:1px dashed #ccc;display:flex;align-items:center;justify-content:center;font-size:9px;color:#bbb;margin:auto}
+.summary-row{display:flex;justify-content:flex-end;gap:10px;margin-bottom:10px}
+.sum-box{border:2px solid var(--navy);border-radius:5px;padding:7px 14px;text-align:center;min-width:120px}
+.sum-lbl{font-size:8px;color:#666;text-transform:uppercase}
+.sum-val{font-size:17px;font-weight:900;color:var(--red)}
+.terms-box{border:1px solid #eee;border-radius:4px;padding:8px 12px;margin-bottom:10px;font-size:9.5px}
+.footer-sign{text-align:right;font-size:10px;font-weight:700;color:var(--navy);border-top:1px solid var(--navy);padding-top:6px}
+.rmv-btn{background:#fee;color:#c00;border:1px solid #fcc;border-radius:3px;padding:2px 7px;font-size:9px;cursor:pointer}
+
+/* STATUS badge */
+.status-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.status-draft{background:#fff8e1;color:#f57f17;border:1px solid #ffe082}
+.status-saved{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
+
+
+@media (max-width:600px){
+  .topbar{flex-wrap:wrap;height:auto;padding:8px 10px;gap:6px}
+  .topbar-brand{font-size:13px;width:100%}
+  .tab-btn{font-size:11px;padding:0 10px;height:36px}
+  .topbar-right{gap:5px}
+  .tbtn{padding:5px 8px;font-size:11px}
+  .page.active{flex-direction:column}
+  .sidebar{width:100%;border-right:none;border-bottom:1px solid var(--border);max-height:60vh;overflow-y:auto}
+  .main-area{padding:10px}
+  .po-card{padding:12px}
+  .co-name{font-size:14px}
+  .po-title{font-size:14px}
+  .meta-strip{flex-wrap:wrap}
+  .mc{min-width:45%;border-bottom:1px solid #ddd}
+  .prod-table{font-size:8px}
+  .prod-table th,.prod-table td{padding:2px 2px}
+  .row2{grid-template-columns:1fr}
+  .summary-row{justify-content:center}
+}
+@media print{
+  .topbar,.sidebar,.no-print,.rmv-btn{display:none!important}
+  .page{display:block!important;height:auto}
+  .main-area{padding:0;background:#fff;overflow:visible}
+  .po-card{border:none;border-radius:0;padding:8mm;max-width:100%}
+  body{background:#fff}
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+  img { display:block !important; visibility:visible !important; opacity:1 !important; max-width:none !important; break-inside:avoid; page-break-inside:avoid; }
+  a { color:inherit !important; text-decoration:none !important; }
+  .prod-table { break-inside:auto; }
+  .prod-table tr { break-inside:avoid; page-break-inside:avoid; }
+  @page{size:A4 landscape;margin:6mm}
+}
+</style>
+</head>
+<body>
+
+<div class="no-print" style="background:#fffde7;border-bottom:2px solid #f9a825;padding:8px 16px;font-size:11px;color:#5d4037;text-align:center">
+  &#9888; Before printing: in the print dialog, click <strong>More settings</strong> and make sure <strong>Background graphics</strong> is turned ON. This is required for images to appear in the PDF.
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-brand">&#128230; BSC Textiles PO</div>
+  <button class="tab-btn active" onclick="showPage('po-page',this)">&#128221; New / Edit PO</button>
+  <button class="tab-btn" onclick="showPage('hist-page',this)">&#128196; PO History</button>
+  <div class="topbar-right">
+    <span id="po-status-badge" class="status-badge status-draft">Draft</span>
+    <button class="tbtn tbtn-green" onclick="savePO()">&#128190; Save PO</button>
+    <button class="tbtn tbtn-white" onclick="printPO()">&#128438; Print / PDF</button>
+    <button class="tbtn tbtn-red" onclick="newPO()">&#43; New PO</button>
+  </div>
+</div>
+
+<!-- ═══ PO ENTRY PAGE ═══ -->
+<div class="page active" id="po-page">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar no-print">
+
+    <div class="s-title">Company Info</div>
+    <label>Company Name</label>
+    <input type="text" id="coName" value="BSC TEXTILES PRIVATE LIMITED">
+    <label>Address</label>
+    <input type="text" id="coAddr" value="1SI Gate Road, Shukrawar Peth, Tilakwadi, Belagavi">
+    <label>GST Number</label>
+    <input type="text" id="coGST" value="29AAKCB1427D1ZW">
+    <label>Phone</label>
+    <input type="text" id="coPhone" value="7090066333">
+    <label>Email</label>
+    <input type="text" id="coEmail" value="accounts@bscbelagavi.com">
+
+    <label>Company Logo <span style="color:#2e7d32;font-weight:400">(saved permanently)</span></label>
+    <div id="coLogoBox" style="display:flex;gap:6px;margin-bottom:8px">
+      <label for="coLogoCam" style="flex:1;padding:8px 4px;border:2px dashed #00205b;border-radius:6px;background:#f0f4ff;color:#00205b;font-size:11px;font-weight:700;cursor:pointer;text-align:center;display:block;-webkit-tap-highlight-color:transparent">
+        <input type="file" id="coLogoCam" accept="image/*" capture="environment" style="display:none;position:absolute;width:0;height:0;opacity:0" onchange="loadImg(this,'coLogo')">
+        &#128247; Camera
+      </label>
+      <label for="coLogoGal" style="flex:1;padding:8px 4px;border:2px dashed #888;border-radius:6px;background:#f8f8f8;color:#444;font-size:11px;font-weight:700;cursor:pointer;text-align:center;display:block;-webkit-tap-highlight-color:transparent">
+        <input type="file" id="coLogoGal" accept="image/*" style="display:none;position:absolute;width:0;height:0;opacity:0" onchange="loadImg(this,'coLogo')">
+        &#128444; Gallery
+      </label>
+    </div>
+    <div id="coLogoRow" style="display:none" class="logo-row">
+      <img id="coLogoThumb" class="logo-thumb">
+      <div><div style="font-size:10px;color:#2e7d32;font-weight:600">&#10003; Logo saved</div><button class="clr-btn" onclick="clearImg('coLogo')">Remove</button></div>
+    </div>
+
+    <div class="s-title">PO Details</div>
+    <label>PO Number <span style="color:#888;font-weight:400">(auto-generated)</span></label>
+    <input type="text" id="poNum" readonly style="background:#f5f5f5;color:var(--navy);font-weight:700">
+    <label>PO Date</label>
+    <input type="date" id="poDate">
+    <label>Supplier Name</label>
+    <input type="text" id="supplier">
+    <label>Credit Days</label>
+    <input type="number" id="creditDays" value="30">
+    <label>Date of Supply</label>
+    <input type="date" id="supplyDate">
+    <label>Mode of Transport</label>
+    <input type="text" id="transport" value="VRL">
+    <label>Place of Supply</label>
+    <input type="text" id="placeSupply">
+    <label>Delivery Address</label>
+    <textarea id="deliveryAddr" rows="2"></textarea>
+
+    <div class="s-title">Supplier Details</div>
+    <label>Supplier GST</label>
+    <input type="text" id="supGST">
+    <label>Supplier Logo <span style="color:#2e7d32;font-weight:400">(saved permanently)</span></label>
+    <div id="supLogoBox" style="display:flex;gap:6px;margin-bottom:8px">
+      <label for="supLogoCam" style="flex:1;padding:8px 4px;border:2px dashed #00205b;border-radius:6px;background:#f0f4ff;color:#00205b;font-size:11px;font-weight:700;cursor:pointer;text-align:center;display:block;-webkit-tap-highlight-color:transparent">
+        <input type="file" id="supLogoCam" accept="image/*" capture="environment" style="display:none;position:absolute;width:0;height:0;opacity:0" onchange="loadImg(this,'supLogo')">
+        &#128247; Camera
+      </label>
+      <label for="supLogoGal" style="flex:1;padding:8px 4px;border:2px dashed #888;border-radius:6px;background:#f8f8f8;color:#444;font-size:11px;font-weight:700;cursor:pointer;text-align:center;display:block;-webkit-tap-highlight-color:transparent">
+        <input type="file" id="supLogoGal" accept="image/*" style="display:none;position:absolute;width:0;height:0;opacity:0" onchange="loadImg(this,'supLogo')">
+        &#128444; Gallery
+      </label>
+    </div>
+    <div id="supLogoRow" style="display:none" class="logo-row">
+      <img id="supLogoThumb" class="logo-thumb">
+      <div><div style="font-size:10px;color:#2e7d32;font-weight:600">&#10003; Logo saved</div><button class="clr-btn" onclick="clearImg('supLogo')">Remove</button></div>
+    </div>
+
+    <div class="s-title">Terms &amp; Conditions</div>
+    <input type="text" id="tc1" value="Quality as per sample approved.">
+    <input type="text" id="tc2" value="Delivery strictly as per schedule.">
+    <input type="text" id="tc3" value="Any claims to be reported within 48 hours of delivery.">
+    <input type="text" id="tc4" value="Payment as per agreed credit terms.">
+    <label>Authorised Signatory</label>
+    <input type="text" id="signatory" value="BSC TEXTILES PRIVATE LIMITED">
+
+    <div class="s-title">Add Product</div>
+    <div class="tip">Fill product details below, add image, set quantities → click Add Product</div>
+
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <label>Product Name *</label>
+      <button type="button" onclick="document.getElementById('np-name').value='';document.getElementById('np-mrp').value='';document.getElementById('np-wsp').value='';document.getElementById('np-name').focus()" style="background:none;border:none;color:#888;font-size:10px;text-decoration:underline;cursor:pointer;padding:0;margin-bottom:2px">Clear name</button>
+    </div>
+    <input type="text" id="np-name" placeholder="e.g. Shirt, Pant, Kurta">
+    <div id="np-name-kept-msg" style="display:none;font-size:10px;color:#2e7d32;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:4px;padding:4px 8px;margin:-3px 0 8px">&#10003; "<span id="np-name-kept-val"></span>" kept — add the next variant or click Clear name to change product</div>
+    <div class="row2">
+      <div><label>Design No.</label><input type="text" id="np-design" placeholder="001"></div>
+      <div><label>Colour</label><input type="text" id="np-colour" placeholder="White"></div>
+    </div>
+    <div class="row2" style="margin-top:4px">
+      <div><label>Type</label><input type="text" id="np-type" placeholder="Casual"></div>
+      <div><label>Style</label><input type="text" id="np-style" placeholder="Regular"></div>
+    </div>
+    <div class="row2" style="margin-top:4px">
+      <div><label>Pattern</label><input type="text" id="np-pattern" placeholder="Solid"></div>
+      <div><label>MRP (&#8377;)</label><input type="number" id="np-mrp" placeholder="999"></div>
+    </div>
+    <div class="row2" style="margin-top:4px">
+      <div><label>WSP (&#8377;) * <span style="font-weight:400;color:#888">order rate</span></label><input type="number" id="np-wsp" placeholder="200"></div>
+      <div></div>
+    </div>
+    <div class="tip" style="margin-top:-2px">WSP = the rate you're ordering at — Total Value is calculated using WSP × Qty. MRP is shown on the PDF for reference only.</div>
+
+    <label style="margin-top:4px">Product Image</label>
+    <div id="np-upbox" style="display:flex;gap:6px;margin-bottom:8px">
+      <label for="np-file-cam" style="flex:1;padding:10px 6px;border:2px dashed #00205b;border-radius:6px;background:#f0f4ff;color:#00205b;font-size:12px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;-webkit-tap-highlight-color:transparent">
+        <input type="file" id="np-file-cam" accept="image/*" capture="environment" style="display:none;position:absolute;width:0;height:0;opacity:0" onchange="previewProdImg(this)">
+        <span style="font-size:26px;line-height:1">&#128247;</span>
+        <span>Take Photo</span>
+        <span style="font-size:9px;font-weight:400;color:#5577aa">Opens your camera</span>
+      </label>
+      <label for="np-file-gal" style="flex:1;padding:10px 6px;border:2px dashed #888;border-radius:6px;background:#f8f8f8;color:#444;font-size:12px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;-webkit-tap-highlight-color:transparent">
+        <input type="file" id="np-file-gal" accept="image/*" style="display:none;position:absolute;width:0;height:0;opacity:0" onchange="previewProdImg(this)">
+        <span style="font-size:26px;line-height:1">&#128444;</span>
+        <span>Gallery</span>
+        <span style="font-size:9px;font-weight:400;color:#888">Choose from phone</span>
+      </label>
+    </div>
+    <div id="np-img-row" style="display:none" class="logo-row">
+      <img id="np-img-thumb" class="img-thumb">
+      <div><div style="font-size:10px;color:#2e7d32;font-weight:600">&#10003; Image ready</div><button class="clr-btn" onclick="clearProdImg()">Remove</button></div>
+    </div>
+
+    <label style="margin-top:4px">Sizes &amp; Quantities</label>
+    <div class="tip" style="margin-bottom:6px">Default sizes 34–44 shown. ✕ to remove. Enter qty in box. Add extra sizes below.</div>
+    <div id="size-chips"></div>
+    <div class="add-sz-row">
+      <input type="text" id="extra-size" placeholder="Add size e.g. 46, XL">
+      <button onclick="addExtraSize()">+ Add</button>
+    </div>
+
+    <button class="btn btn-primary" onclick="addProduct()">+ Add Product to PO</button>
+
+  </div><!-- /sidebar -->
+
+  <!-- MAIN PREVIEW -->
+  <div class="main-area">
+    <div class="no-print" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:12px;color:#555">
+      <span style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:4px;padding:3px 10px;color:#2e7d32;font-weight:700">Live Preview</span>
+      Updates as you type. <strong>Save PO</strong> stores it in history. <strong>Print/PDF</strong> downloads.
+    </div>
+
+    <div class="po-card" id="po-card">
+      <div class="po-hdr">
+        <div>
+          <div id="prev-co-logo" style="margin-bottom:5px"></div>
+          <div class="co-name" id="prev-co-name">BSC TEXTILES PRIVATE LIMITED</div>
+          <div class="co-sub" id="prev-co-addr"></div>
+          <div class="co-sub" id="prev-co-gst"></div>
+        </div>
+        <div class="po-title-right">
+          <div id="prev-sup-logo" style="margin-bottom:4px"></div>
+          <div class="po-title">PURCHASE ORDER</div>
+          <div class="po-numline" id="prev-po-num"></div>
+          <div class="po-dateline" id="prev-po-date"></div>
+        </div>
+      </div>
+
+      <div class="meta-strip">
+        <div class="mc"><div class="ml">Purchase Order No.</div><div class="mv" id="m-ponum"></div></div>
+        <div class="mc"><div class="ml">PO Date</div><div class="mv" id="m-date"></div></div>
+        <div class="mc"><div class="ml">Supplier Name</div><div class="mv" style="font-size:11px" id="m-sup"></div></div>
+        <div class="mc"><div class="ml">Credit Days</div><div class="mv" id="m-credit"></div></div>
+        <div class="mc"><div class="ml">Date of Supply</div><div class="mv" id="m-supdate"></div></div>
+        <div class="mc" style="border:none"><div class="ml">Mode of Transport</div><div class="mv" style="font-size:11px" id="m-transport"></div></div>
+      </div>
+
+      <div class="pos-bar"><strong>Place of Supply: <span id="prev-pos"></span></strong> &nbsp;|&nbsp; <span id="prev-del"></span></div>
+
+      <table class="prod-table">
+        <thead><tr id="prod-hdr"></tr></thead>
+        <tbody id="prod-body"></tbody>
+      </table>
+
+      <div class="summary-row">
+        <div class="sum-box"><div class="sum-lbl">Net Quantity</div><div class="sum-val" id="tot-qty">0</div></div>
+        <div class="sum-box"><div class="sum-lbl">Net Amount</div><div class="sum-val" id="tot-val">&#8377;0</div></div>
+      </div>
+
+      <div class="terms-box">
+        <strong style="color:var(--navy)">Terms &amp; Conditions:</strong>
+        <ol style="margin-left:16px;margin-top:3px" id="terms-list"></ol>
+      </div>
+
+      <div class="footer-sign">Authorised Signatory &#8212; <span id="prev-sign"></span></div>
+      <div style="text-align:center;font-size:8px;color:#bbb;margin-top:5px" id="gen-date"></div>
+    </div>
+  </div>
+
+</div><!-- /po-page -->
+
+<!-- ═══ PO HISTORY PAGE ═══ -->
+<div class="hist-page" id="hist-page">
+  <div class="hist-toolbar no-print">
+    <strong style="color:var(--navy)">&#128196; PO History</strong>
+    <input type="text" id="hist-search" placeholder="Search by PO number or supplier..." oninput="renderHistory()">
+    <span id="hist-count" style="font-size:11px;color:#888"></span>
+  </div>
+  <div class="hist-list" id="hist-list">
+    <div class="empty-hist"><div class="ei">&#128196;</div><div>No POs saved yet.<br>Create a PO and click Save.</div></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+var STATE = {
+  currentPOId: null,    // null = new PO
+  products: [],
+  npImg: null,          // pending product image base64
+  pendingSizes: [],     // [{label, qty, active}]
+  isDirty: false
+};
+
+var SETTINGS = {
+  coLogo: null,
+  supLogo: null,
+  nextSeq: 1           // auto-increment PO sequence
+};
+
+var PO_LIST = [];      // array of saved PO objects
+
+var DEFAULT_SIZES = ['34','36','38','40','42','44'];
+
+// ════════════════════════════════════════════════
+// INIT — load everything from localStorage
+// ════════════════════════════════════════════════
+function init() {
+  try {
+    var s = localStorage.getItem('bsc_settings');
+    if (s) SETTINGS = JSON.parse(s);
+    var p = localStorage.getItem('bsc_po_list');
+    if (p) PO_LIST = JSON.parse(p);
+  } catch(e) {}
+
+  // Restore logos
+  if (SETTINGS.coLogo) showLogo('coLogo', SETTINGS.coLogo);
+  if (SETTINGS.supLogo) showLogo('supLogo', SETTINGS.supLogo);
+
+  // Set today date
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('poDate').value = today;
+
+  // Generate PO number for new PO
+  assignNewPONumber();
+
+  // Load saved company settings into form
+  loadSettingsToForm();
+
+  // Default sizes
+  resetDefaultSizes();
+
+  // Live watchers
+  document.querySelectorAll('#po-page input[type=text],#po-page input[type=number],#po-page input[type=date],#po-page textarea').forEach(function(el){
+    el.addEventListener('input', function(){ STATE.isDirty=true; update(); });
+  });
+
+  document.getElementById('extra-size').addEventListener('keydown', function(e){
+    if(e.key==='Enter'){e.preventDefault();addExtraSize();}
+  });
+
+  update();
+  renderHistory();
+}
+
+// ════════════════════════════════════════════════
+// PO NUMBER — Serial, auto-increment
+// ════════════════════════════════════════════════
+function assignNewPONumber() {
+  var now = new Date();
+  var yr = now.getFullYear();
+  var mo = String(now.getMonth()+1).padStart(2,'0');
+  var seq = String(SETTINGS.nextSeq).padStart(5,'0');
+  document.getElementById('poNum').value = 'PO/'+yr+'/'+mo+'/'+seq;
+}
+
+function getNextPONumber() {
+  var now = new Date();
+  var yr = now.getFullYear();
+  var mo = String(now.getMonth()+1).padStart(2,'0');
+  var seq = String(SETTINGS.nextSeq).padStart(5,'0');
+  return 'PO/'+yr+'/'+mo+'/'+seq;
+}
+
+// ════════════════════════════════════════════════
+// PAGE NAVIGATION
+// ════════════════════════════════════════════════
+function showPage(pageId, btn) {
+  document.querySelectorAll('.page, .hist-page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById(pageId).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(pageId==='hist-page') renderHistory();
+}
+
+// ════════════════════════════════════════════════
+// SETTINGS / LOGO PERSISTENCE
+// ════════════════════════════════════════════════
+function saveSettings() {
+  // Save company form values to settings
+  SETTINGS.coName    = gv('coName');
+  SETTINGS.coAddr    = gv('coAddr');
+  SETTINGS.coGST     = gv('coGST');
+  SETTINGS.coPhone   = gv('coPhone');
+  SETTINGS.coEmail   = gv('coEmail');
+  SETTINGS.signatory = gv('signatory');
+  SETTINGS.tc1 = gv('tc1'); SETTINGS.tc2 = gv('tc2');
+  SETTINGS.tc3 = gv('tc3'); SETTINGS.tc4 = gv('tc4');
+  try { localStorage.setItem('bsc_settings', JSON.stringify(SETTINGS)); } catch(e){}
+}
+
+function loadSettingsToForm() {
+  if(!SETTINGS.coName) return;
+  var map = {coName:'coName',coAddr:'coAddr',coGST:'coGST',coPhone:'coPhone',coEmail:'coEmail',
+             signatory:'signatory',tc1:'tc1',tc2:'tc2',tc3:'tc3',tc4:'tc4'};
+  Object.keys(map).forEach(function(k){
+    if(SETTINGS[k]) document.getElementById(map[k]).value = SETTINGS[k];
+  });
+}
+
+function loadImg(input, key) {
+  var file = input.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    SETTINGS[key] = e.target.result;
+    showLogo(key, e.target.result);
+    saveSettings();
+    update();
+  };
+  reader.readAsDataURL(file);
+}
+
+function showLogo(key, data) {
+  if(key==='coLogo'){
+    document.getElementById('coLogoThumb').src = data;
+    document.getElementById('coLogoRow').style.display = 'flex';
+    document.getElementById('coLogoBox').style.display = 'none';
+  } else {
+    document.getElementById('supLogoThumb').src = data;
+    document.getElementById('supLogoRow').style.display = 'flex';
+    document.getElementById('supLogoBox').style.display = 'none';
+  }
+}
+
+function clearImg(key) {
+  SETTINGS[key] = null;
+  saveSettings();
+  if(key==='coLogo'){
+    document.getElementById('coLogoRow').style.display='none';
+    document.getElementById('coLogoBox').style.display='flex';
+    ['coLogoCam','coLogoGal'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  } else {
+    document.getElementById('supLogoRow').style.display='none';
+    document.getElementById('supLogoBox').style.display='flex';
+    ['supLogoCam','supLogoGal'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  }
+  update();
+}
+
+// ════════════════════════════════════════════════
+// PRODUCT IMAGE
+// ════════════════════════════════════════════════
+function previewProdImg(input) {
+  var file = input.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    STATE.npImg = e.target.result;
+    document.getElementById('np-img-thumb').src = STATE.npImg;
+    document.getElementById('np-img-row').style.display = 'flex';
+    document.getElementById('np-upbox').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearProdImg() {
+  STATE.npImg = null;
+  ['np-file-cam','np-file-gal'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('np-img-row').style.display='none';
+  document.getElementById('np-upbox').style.display='flex';
+}
+
+// ════════════════════════════════════════════════
+// DEFAULT SIZES — 34 to 44
+// ════════════════════════════════════════════════
+function resetDefaultSizes() {
+  STATE.pendingSizes = DEFAULT_SIZES.map(function(s){return{label:s,qty:0,active:true};});
+  renderSizeChips();
+}
+
+function renderSizeChips() {
+  var html = '<div class="size-defaults">';
+  STATE.pendingSizes.forEach(function(s,i){
+    var cls = s.active ? 'sz-chip' : 'sz-chip sz-inactive';
+    html += '<div class="'+cls+'" id="szchip-'+i+'">'
+      + '<button class="sz-remove" onclick="toggleSize('+i+')" title="'+(s.active?'Remove':'Add back')+'">&#215;</button>'
+      + '<span class="sz-label">'+s.label+'</span>'
+      + '<input type="number" min="0" value="'+(s.qty||'')+'" placeholder="0" '
+      + (s.active?'':'disabled ')
+      + 'onchange="STATE.pendingSizes['+i+'].qty=Number(this.value)||0">'
+      + '</div>';
+  });
+  html += '</div>';
+  document.getElementById('size-chips').innerHTML = html;
+}
+
+function toggleSize(i) {
+  STATE.pendingSizes[i].active = !STATE.pendingSizes[i].active;
+  if(!STATE.pendingSizes[i].active) STATE.pendingSizes[i].qty = 0;
+  renderSizeChips();
+}
+
+function addExtraSize() {
+  var s = document.getElementById('extra-size').value.trim();
+  if(!s) return;
+  if(STATE.pendingSizes.find(function(x){return x.label===s;})){
+    // Re-activate if already there but inactive
+    STATE.pendingSizes.forEach(function(x,i){if(x.label===s){x.active=true;}});
+    renderSizeChips();
+    document.getElementById('extra-size').value='';
+    return;
+  }
+  STATE.pendingSizes.push({label:s,qty:0,active:true});
+  sortSizesArr(STATE.pendingSizes);
+  renderSizeChips();
+  document.getElementById('extra-size').value='';
+}
+
+function sortSizesArr(arr) {
+  arr.sort(function(a,b){
+    var na=Number(a.label),nb=Number(b.label);
+    var ia=!isNaN(na)&&a.label!=='',ib=!isNaN(nb)&&b.label!=='';
+    if(ia&&ib) return na-nb;
+    if(ia) return -1; if(ib) return 1;
+    var ord=['XS','S','M','L','XL','XXL','XXXL','2XL','3XL','4XL'];
+    var pa=ord.indexOf(a.label.toUpperCase()),pb=ord.indexOf(b.label.toUpperCase());
+    return(pa<0?99:pa)-(pb<0?99:pb);
+  });
+}
+
+// ════════════════════════════════════════════════
+// ADD PRODUCT
+// ════════════════════════════════════════════════
+function addProduct() {
+  var name = gv('np-name');
+  if(!name){alert('Please enter a Product Name.');return;}
+  var wsp = Number(gv('np-wsp'))||0;
+  if(!wsp){alert('Please enter the WSP (order rate). This is required to calculate the Total Value.');return;}
+  var activeSizes = STATE.pendingSizes.filter(function(s){return s.active;});
+  if(!activeSizes.length){alert('Please activate at least one size.');return;}
+
+  STATE.products.push({
+    name:    name,
+    design:  gv('np-design'),
+    colour:  gv('np-colour'),
+    type:    gv('np-type'),
+    style:   gv('np-style'),
+    pattern: gv('np-pattern'),
+    mrp:     Number(gv('np-mrp'))||0,
+    wsp:     wsp,
+    img:     STATE.npImg,
+    sizes:   activeSizes.map(function(s){return{label:s.label,qty:s.qty};})
+  });
+
+  // Reset variant-specific fields only.
+  // Product Name, MRP, and WSP stay filled in — most POs add several rows
+  // of the SAME product (different colour/design/size) at the same prices,
+  // so this saves re-typing them every time. Click "Clear Name" or just
+  // type over the fields to start a different product or price.
+  ['np-design','np-colour','np-type','np-style','np-pattern'].forEach(function(id){
+    document.getElementById(id).value='';
+  });
+  clearProdImg();
+  resetDefaultSizes();
+  STATE.isDirty = true;
+  update();
+  flashNameKept();
+}
+
+function flashNameKept() {
+  var el = document.getElementById('np-name-kept-msg');
+  if (!el) return;
+  var nameEl = document.getElementById('np-name-kept-val');
+  if (nameEl) nameEl.textContent = gv('np-name');
+  el.style.display = 'block';
+  clearTimeout(window._nameKeptTimer);
+  window._nameKeptTimer = setTimeout(function(){ el.style.display='none'; }, 2500);
+}
+
+function removeProduct(i) {
+  STATE.products.splice(i,1);
+  STATE.isDirty = true;
+  update();
+}
+
+// ════════════════════════════════════════════════
+// PRINT / SAVE PDF — filename uses the PO Number
+// ════════════════════════════════════════════════
+var ORIGINAL_TITLE = document.title;
+function printPO() {
+  var poNum = gv('poNum');
+  if (poNum && poNum.trim() !== '') {
+    // Chrome uses document.title as the default PDF filename.
+    // Slashes aren't allowed in filenames, so swap them for dashes.
+    document.title = poNum.replace(/\//g, '-');
+  }
+  window.print();
+  // Restore the normal tab title shortly after the print dialog opens
+  setTimeout(function(){ document.title = ORIGINAL_TITLE; }, 1000);
+}
+
+// ════════════════════════════════════════════════
+// SAVE PO
+// ════════════════════════════════════════════════
+function savePO() {
+  var supplier = gv('supplier');
+  if(!supplier){alert('Please enter a Supplier Name before saving.');return;}
+
+  saveSettings(); // persist company info + logos
+
+  var poNum = gv('poNum');
+  var poObj = {
+    id:         poNum,
+    poNum:      poNum,
+    poDate:     gv('poDate'),
+    supplier:   supplier,
+    supGST:     gv('supGST'),
+    creditDays: gv('creditDays'),
+    supplyDate: gv('supplyDate'),
+    transport:  gv('transport'),
+    placeSupply:gv('placeSupply'),
+    deliveryAddr:gv('deliveryAddr'),
+    products:   JSON.parse(JSON.stringify(STATE.products)),
+    savedOn:    new Date().toISOString(),
+    totalQty:   calcTotals().qty,
+    totalVal:   calcTotals().val
+  };
+
+  // Update or insert
+  var existing = PO_LIST.findIndex(function(p){return p.id===poNum;});
+  if(existing>=0) PO_LIST[existing] = poObj;
+  else PO_LIST.unshift(poObj);  // newest first
+
+  // Increment sequence if this was a new PO
+  if(STATE.currentPOId===null){
+    SETTINGS.nextSeq++;
+    SETTINGS.nextSeqSaved = true;
+  }
+  STATE.currentPOId = poNum;
+
+  try { localStorage.setItem('bsc_po_list', JSON.stringify(PO_LIST)); } catch(e){
+    alert('Storage full — please export old POs and clear history.');return;
+  }
+  saveSettings();
+
+  STATE.isDirty = false;
+  document.getElementById('po-status-badge').textContent='Saved';
+  document.getElementById('po-status-badge').className='status-badge status-saved';
+
+  alert('PO '+poNum+' saved successfully!\n\nYou can view it in PO History tab.');
+}
+
+function calcTotals() {
+  var qty=0,val=0;
+  STATE.products.forEach(function(p){
+    var pq=0;
+    p.sizes.forEach(function(s){pq+=s.qty;});
+    qty+=pq; val+=pq*(p.wsp||p.mrp||0);
+  });
+  return{qty:qty,val:val};
+}
+
+// ════════════════════════════════════════════════
+// NEW PO
+// ════════════════════════════════════════════════
+function newPO() {
+  if(STATE.isDirty && STATE.products.length){
+    if(!confirm('Current PO has unsaved changes. Start a new PO?')) return;
+  }
+  STATE.currentPOId = null;
+  STATE.products = [];
+  STATE.npImg = null;
+  STATE.isDirty = false;
+
+  // Clear PO-specific fields only (keep company info)
+  ['supplier','supGST','creditDays','supplyDate','transport','placeSupply','deliveryAddr'].forEach(function(id){
+    document.getElementById(id).value='';
+  });
+  document.getElementById('creditDays').value='30';
+  document.getElementById('transport').value='VRL';
+  document.getElementById('poDate').value=new Date().toISOString().split('T')[0];
+
+  assignNewPONumber();
+  clearProdImg();
+  resetDefaultSizes();
+
+  document.getElementById('po-status-badge').textContent='Draft';
+  document.getElementById('po-status-badge').className='status-badge status-draft';
+  update();
+
+  // Switch to PO page
+  showPage('po-page', document.querySelector('.tab-btn'));
+}
+
+// ════════════════════════════════════════════════
+// LOAD PO FROM HISTORY
+// ════════════════════════════════════════════════
+function loadPO(poNum) {
+  if(STATE.isDirty && STATE.products.length){
+    if(!confirm('Unsaved changes will be lost. Load this PO?')) return;
+  }
+  var po = PO_LIST.find(function(p){return p.id===poNum;});
+  if(!po) return;
+
+  STATE.currentPOId = poNum;
+  STATE.products = JSON.parse(JSON.stringify(po.products||[]));
+  STATE.isDirty = false;
+
+  document.getElementById('poNum').value    = po.poNum;
+  document.getElementById('poDate').value   = po.poDate||'';
+  document.getElementById('supplier').value = po.supplier||'';
+  document.getElementById('supGST').value   = po.supGST||'';
+  document.getElementById('creditDays').value=po.creditDays||'30';
+  document.getElementById('supplyDate').value=po.supplyDate||'';
+  document.getElementById('transport').value =po.transport||'VRL';
+  document.getElementById('placeSupply').value=po.placeSupply||'';
+  document.getElementById('deliveryAddr').value=po.deliveryAddr||'';
+
+  resetDefaultSizes();
+  clearProdImg();
+
+  document.getElementById('po-status-badge').textContent='Saved';
+  document.getElementById('po-status-badge').className='status-badge status-saved';
+
+  update();
+  showPage('po-page', document.querySelectorAll('.tab-btn')[0]);
+}
+
+function deletePO(poNum) {
+  if(!confirm('Delete PO '+poNum+'? This cannot be undone.')) return;
+  PO_LIST = PO_LIST.filter(function(p){return p.id!==poNum;});
+  try{ localStorage.setItem('bsc_po_list',JSON.stringify(PO_LIST)); }catch(e){}
+  renderHistory();
+}
+
+// ════════════════════════════════════════════════
+// RENDER HISTORY
+// ════════════════════════════════════════════════
+function renderHistory() {
+  var search = (document.getElementById('hist-search')||{}).value||'';
+  var filtered = PO_LIST.filter(function(p){
+    if(!search) return true;
+    return (p.poNum||'').toLowerCase().includes(search.toLowerCase()) ||
+           (p.supplier||'').toLowerCase().includes(search.toLowerCase());
+  });
+
+  document.getElementById('hist-count').textContent = filtered.length+' PO'+(filtered.length!==1?'s':'');
+
+  var list = document.getElementById('hist-list');
+  if(!filtered.length){
+    list.innerHTML = '<div class="empty-hist"><div class="ei">&#128196;</div><div>'+(search?'No POs match "'+search+'"':'No POs saved yet.<br>Create a PO and click Save.')+' </div></div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(function(p){
+    var savedOn = p.savedOn ? new Date(p.savedOn).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '';
+    return '<div class="hist-card">'
+      +'<div>'
+        +'<div class="hist-num">'+p.poNum+'</div>'
+        +'<div class="hist-meta">'
+          +'Supplier: <strong>'+p.supplier+'</strong> &nbsp;|&nbsp; '
+          +'Date: '+(p.poDate?fmtDate(p.poDate):'—')+' &nbsp;|&nbsp; '
+          +'Items: '+(p.products?p.products.length:0)+' products'
+          +(savedOn?' &nbsp;|&nbsp; Saved: '+savedOn:'')
+        +'</div>'
+      +'</div>'
+      +'<div style="margin-left:auto;text-align:right">'
+        +'<div class="hist-val">&#8377;'+Number(p.totalVal||0).toLocaleString('en-IN')+'</div>'
+        +'<div class="hist-actions" style="margin-top:5px">'
+          +'<button class="hbtn hbtn-view" onclick="loadPO(\''+p.id+'\')">&#9998; Open &amp; Edit</button>'
+          +'<button class="hbtn hbtn-del" onclick="deletePO(\''+p.id+'\')">&#128465; Delete</button>'
+        +'</div>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+}
+
+// ════════════════════════════════════════════════
+// LIVE PREVIEW UPDATE
+// ════════════════════════════════════════════════
+function update() {
+  var cn = gv('coName')||'BSC TEXTILES PRIVATE LIMITED';
+  st('prev-co-name', cn);
+  st('prev-co-addr', gv('coAddr'));
+  se('prev-co-gst','GST: '+gv('coGST')+'&nbsp;|&nbsp;&#9990; '+gv('coPhone')+'&nbsp;|&nbsp;&#9993; '+gv('coEmail'));
+  se('prev-co-logo', SETTINGS.coLogo?'<img src="'+SETTINGS.coLogo+'" style="max-height:50px;max-width:150px">':'');
+  se('prev-sup-logo', SETTINGS.supLogo?'<img src="'+SETTINGS.supLogo+'" style="max-height:44px;max-width:120px;display:block;margin-left:auto">':'');
+
+  var pn=gv('poNum');
+  st('prev-po-num',pn); st('m-ponum',pn);
+  var pd=fmtDate(gv('poDate'));
+  st('prev-po-date','Date: '+pd); st('m-date',pd);
+  st('m-sup',gv('supplier')||'—');
+  st('m-credit',gv('creditDays')||'—');
+  st('m-supdate',fmtDate(gv('supplyDate')));
+  st('m-transport',gv('transport')||'—');
+  st('prev-pos',gv('placeSupply')||'—');
+  st('prev-del',gv('deliveryAddr')||'—');
+
+  var tl=document.getElementById('terms-list');
+  if(tl) tl.innerHTML=['tc1','tc2','tc3','tc4'].map(function(id){
+    return '<li style="margin:2px 0">'+gv(id)+'</li>';
+  }).join('');
+
+  st('prev-sign',gv('signatory')||cn);
+  se('gen-date','Generated: '+fmtDate(gv('poDate')));
+
+  buildTable();
+}
+
+function buildTable() {
+  // Gather all unique active sizes
+  var tempSizes=[];
+  STATE.products.forEach(function(p){
+    p.sizes.forEach(function(s){
+      if(!tempSizes.find(function(x){return x.label===s.label;}))
+        tempSizes.push({label:s.label,qty:0});
+    });
+  });
+  sortSizesArr(tempSizes);
+  var allSizes=tempSizes.map(function(x){return x.label;});
+
+  // Only show attribute columns that have at least one value filled in.
+  // Empty columns are dropped so Image and Product Name get more room.
+  var attrCols = [
+    {key:'design',  label:'Design No.'},
+    {key:'colour',  label:'Colour'},
+    {key:'type',    label:'Type'},
+    {key:'style',   label:'Style'},
+    {key:'pattern', label:'Pattern'}
+  ];
+  var activeAttrCols = attrCols.filter(function(c){
+    return STATE.products.some(function(p){ return p[c.key] && String(p[c.key]).trim() !== ''; });
+  });
+
+  // MRP column only shows if at least one product has it filled in.
+  // WSP always shows — it's required, and it's what Total Value is based on.
+  var showMRP = STATE.products.some(function(p){ return p.mrp && Number(p.mrp) > 0; });
+
+  var hdr=document.getElementById('prod-hdr');
+  hdr.innerHTML='<th>Sl. No.</th><th>Image</th><th>Product Name</th>'
+    +activeAttrCols.map(function(c){return'<th>'+c.label+'</th>';}).join('')
+    +(showMRP ? '<th>MRP &#8377;</th>' : '')
+    +'<th>WSP &#8377;</th>'
+    +allSizes.map(function(s){return'<th>'+s+'</th>';}).join('')
+    +'<th>Total Qty</th><th>Total Value &#8377;</th><th class="no-print"></th>';
+
+  var tbody=document.getElementById('prod-body');
+  var totalCols = 6 + (showMRP?1:0) + activeAttrCols.length + allSizes.length;
+  if(!STATE.products.length){
+    tbody.innerHTML='<tr><td colspan="'+totalCols+'" style="text-align:center;color:#bbb;padding:24px;font-style:italic">Add products from the left panel</td></tr>';
+    document.getElementById('tot-qty').textContent='0';
+    se('tot-val','&#8377;0'); return;
+  }
+
+  var gq=0,gv2=0,html='';
+  var prevName=null;
+  STATE.products.forEach(function(p,i){
+    var bg=i%2===0?'#fff':'#f8f9ff';
+    var ic=p.img?'<a href="'+p.img+'" target="_blank" style="display:inline-block" title="Click to view full size"><img class="prod-img" src="'+p.img+'"></a>':'<div class="no-img">No image</div>';
+    var sc='',rq=0;
+    allSizes.forEach(function(s){
+      var f=p.sizes.find(function(x){return x.label===s;});
+      var q=f?f.qty:0; rq+=q;
+      sc+='<td>'+(q>0?q:'&#8212;')+'</td>';
+    });
+    var rate = p.wsp || p.mrp || 0;
+    var lv=rq*rate; gq+=rq; gv2+=lv;
+
+    // Freeze / merge repeated Product Name cell — leave blank if same as row above
+    var nameCell;
+    if (p.name === prevName) {
+      nameCell = '<td style="border-top:none"></td>';
+    } else {
+      nameCell = '<td style="text-align:left;font-weight:600">'+p.name+'</td>';
+      prevName = p.name;
+    }
+
+    var attrCells = activeAttrCols.map(function(c){
+      return '<td>'+(p[c.key]||'&#8212;')+'</td>';
+    }).join('');
+
+    var mrpCell = showMRP ? '<td>'+(p.mrp?'&#8377;'+Number(p.mrp).toLocaleString('en-IN'):'&#8212;')+'</td>' : '';
+
+    html+='<tr style="background:'+bg+'">'
+      +'<td style="font-weight:600">'+(i+1)+'</td>'
+      +'<td>'+ic+'</td>'
+      +nameCell
+      +attrCells
+      +mrpCell
+      +'<td style="font-weight:700">&#8377;'+Number(p.wsp||0).toLocaleString('en-IN')+'</td>'
+      +sc
+      +'<td style="font-weight:700;background:#eef2ff">'+rq+'</td>'
+      +'<td style="font-weight:700;color:var(--navy);background:#eef2ff">&#8377;'+Number(lv).toLocaleString('en-IN')+'</td>'
+      +'<td class="no-print"><button class="rmv-btn" onclick="removeProduct('+i+')">&#215; Remove</button></td>'
+      +'</tr>';
+  });
+  tbody.innerHTML=html;
+  document.getElementById('tot-qty').textContent=gq;
+  se('tot-val','&#8377;'+Number(gv2).toLocaleString('en-IN'));
+}
+
+// ════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════
+function fmtDate(d){
+  if(!d)return'—';
+  try{var dt=new Date(d),m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return dt.getDate()+' '+m[dt.getMonth()]+' '+dt.getFullYear();}catch(e){return d;}
+}
+function gv(id){var el=document.getElementById(id);return el?el.value.trim():'';}
+function se(id,html){var el=document.getElementById(id);if(el)el.innerHTML=html;}
+function st(id,text){var el=document.getElementById(id);if(el)el.textContent=text;}
+
+// ════════════════════════════════════════════════
+// STORAGE INFO BANNER
+// ════════════════════════════════════════════════
+function checkStorage(){
+  try{
+    var test='bsc_test';
+    localStorage.setItem(test,'1');
+    localStorage.removeItem(test);
+  }catch(e){
+    document.body.insertAdjacentHTML('afterbegin','<div style="background:#ffebee;border-bottom:2px solid #e53935;padding:8px 16px;font-size:11px;color:#b71c1c;font-weight:600">&#9888; Storage not available in this browser. Data will not be saved between sessions. Open the file directly in Chrome or Edge.</div>');
+  }
+}
+
+// ════════════════════════════════════════════════
+// START
+// ════════════════════════════════════════════════
+checkStorage();
+init();
+</script>
+</body>
+</html>
