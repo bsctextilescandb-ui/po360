@@ -261,6 +261,9 @@ textarea{resize:vertical;min-height:40px}
     <div class="s-title">Add Product</div>
     <div class="tip">Fill product details below, add image, set quantities → click Add Product</div>
 
+    <label>Brand Name *</label>
+    <input type="text" id="np-brand" placeholder="e.g. Raymond, Peter England, Louis Philippe">
+
     <div style="display:flex;justify-content:space-between;align-items:baseline">
       <label>Product Name *</label>
       <button type="button" onclick="document.getElementById('np-name').value='';document.getElementById('np-mrp').value='';document.getElementById('np-wsp').value='';document.getElementById('np-name').focus()" style="background:none;border:none;color:#888;font-size:10px;text-decoration:underline;cursor:pointer;padding:0;margin-bottom:2px">Clear name</button>
@@ -638,6 +641,7 @@ function addProduct() {
   if(!activeSizes.length){alert('Please activate at least one size.');return;}
 
   STATE.products.push({
+    brand:   gv('np-brand'),
     name:    name,
     design:  gv('np-design'),
     colour:  gv('np-colour'),
@@ -681,6 +685,26 @@ function removeProduct(i) {
   update();
 }
 
+
+function editProduct(i){
+  var p=STATE.products[i];
+  document.getElementById('np-brand').value=p.brand||'';
+  document.getElementById('np-name').value=p.name||'';
+  document.getElementById('np-design').value=p.design||'';
+  document.getElementById('np-colour').value=p.colour||'';
+  document.getElementById('np-type').value=p.type||'';
+  document.getElementById('np-style').value=p.style||'';
+  document.getElementById('np-pattern').value=p.pattern||'';
+  document.getElementById('np-mrp').value=p.mrp||'';
+  document.getElementById('np-wsp').value=p.wsp||'';
+  STATE.npImg=p.img||null;
+  STATE.pendingSizes=(p.sizes||[]).map(s=>({label:s.label,qty:s.qty,active:true}));
+  renderSizeChips();
+  STATE.products.splice(i,1);
+  update();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
 // ════════════════════════════════════════════════
 // PRINT / SAVE PDF — filename uses the PO Number
 // ════════════════════════════════════════════════
@@ -718,10 +742,11 @@ function savePO() {
     transport:  gv('transport'),
     placeSupply:gv('placeSupply'),
     deliveryAddr:gv('deliveryAddr'),
-    products:   JSON.parse(JSON.stringify(STATE.products)),
+    itemCount:  STATE.products.length,
     savedOn:    new Date().toISOString(),
     totalQty:   calcTotals().qty,
-    totalVal:   calcTotals().val
+    totalVal:   calcTotals().val,
+    status: 'OPEN'
   };
 
   // Update or insert
@@ -737,7 +762,7 @@ function savePO() {
   STATE.currentPOId = poNum;
 
   try { localStorage.setItem('bsc_po_list', JSON.stringify(PO_LIST)); } catch(e){
-    alert('Storage full — please export old POs and clear history.');return;
+    alert('PO History stores summary only. Images are kept only in the PDF generation process.');return;
   }
   saveSettings();
 
@@ -831,6 +856,18 @@ function deletePO(poNum) {
   renderHistory();
 }
 
+
+function updateStatus(poNum,status){
+  var idx = PO_LIST.findIndex(function(p){return p.id===poNum;});
+  if(idx>=0){
+    PO_LIST[idx].status=status;
+    localStorage.setItem('bsc_po_list',JSON.stringify(PO_LIST));
+    renderHistory();
+    alert('Status updated to '+status);
+  }
+}
+
+
 // ════════════════════════════════════════════════
 // RENDER HISTORY
 // ════════════════════════════════════════════════
@@ -858,14 +895,16 @@ function renderHistory() {
         +'<div class="hist-meta">'
           +'Supplier: <strong>'+p.supplier+'</strong> &nbsp;|&nbsp; '
           +'Date: '+(p.poDate?fmtDate(p.poDate):'—')+' &nbsp;|&nbsp; '
-          +'Items: '+(p.products?p.products.length:0)+' products'
+          +'Items: '+(p.itemCount||0)+' products'
+          +' &nbsp;|&nbsp; Qty: '+(p.totalQty||0)
+          +' &nbsp;|&nbsp; Status: <span style="color:#2e7d32;font-weight:700">'+(p.status||'OPEN')+'</span>'
           +(savedOn?' &nbsp;|&nbsp; Saved: '+savedOn:'')
         +'</div>'
       +'</div>'
       +'<div style="margin-left:auto;text-align:right">'
         +'<div class="hist-val">&#8377;'+Number(p.totalVal||0).toLocaleString('en-IN')+'</div>'
         +'<div class="hist-actions" style="margin-top:5px">'
-          +'<button class="hbtn hbtn-view" onclick="loadPO(\''+p.id+'\')">&#9998; Open &amp; Edit</button>'
+          +'<select onchange="updateStatus(\''+p.id+'\',this.value)" style="padding:4px;border:1px solid #ccc;border-radius:4px">'+['OPEN','PARTIAL RECEIVED','COMPLETED','CLOSED','CANCELLED'].map(function(s){return '<option '+((p.status||'OPEN')===s?'selected':'')+'>'+s+'</option>'}).join('')+'</select>'
           +'<button class="hbtn hbtn-del" onclick="deletePO(\''+p.id+'\')">&#128465; Delete</button>'
         +'</div>'
       +'</div>'
@@ -936,7 +975,7 @@ function buildTable() {
   var showMRP = STATE.products.some(function(p){ return p.mrp && Number(p.mrp) > 0; });
 
   var hdr=document.getElementById('prod-hdr');
-  hdr.innerHTML='<th>Sl. No.</th><th>Image</th><th>Product Name</th>'
+  hdr.innerHTML='<th>Sl. No.</th><th>Image</th><th>Brand</th><th>Product Name</th>'
     +activeAttrCols.map(function(c){return'<th>'+c.label+'</th>';}).join('')
     +(showMRP ? '<th>MRP &#8377;</th>' : '')
     +'<th>WSP &#8377;</th>'
@@ -965,14 +1004,8 @@ function buildTable() {
     var rate = p.wsp || p.mrp || 0;
     var lv=rq*rate; gq+=rq; gv2+=lv;
 
-    // Freeze / merge repeated Product Name cell — leave blank if same as row above
-    var nameCell;
-    if (p.name === prevName) {
-      nameCell = '<td style="border-top:none"></td>';
-    } else {
-      nameCell = '<td style="text-align:left;font-weight:600">'+p.name+'</td>';
-      prevName = p.name;
-    }
+    var nameCell = '<td style="text-align:left;font-weight:600">'+(p.name||'—')+'</td>';
+    var brandCell = '<td style="text-align:left;font-weight:600">'+(p.brand||'—')+'</td>';
 
     var attrCells = activeAttrCols.map(function(c){
       return '<td>'+(p[c.key]||'&#8212;')+'</td>';
@@ -983,6 +1016,7 @@ function buildTable() {
     html+='<tr style="background:'+bg+'">'
       +'<td style="font-weight:600">'+(i+1)+'</td>'
       +'<td>'+ic+'</td>'
+      +brandCell
       +nameCell
       +attrCells
       +mrpCell
@@ -990,7 +1024,7 @@ function buildTable() {
       +sc
       +'<td style="font-weight:700;background:#eef2ff">'+rq+'</td>'
       +'<td style="font-weight:700;color:var(--navy);background:#eef2ff">&#8377;'+Number(lv).toLocaleString('en-IN')+'</td>'
-      +'<td class="no-print"><button class="rmv-btn" onclick="removeProduct('+i+')">&#215; Remove</button></td>'
+      +'<td class="no-print"><button class="rmv-btn" style="background:#e8f0fe;color:#00205b;border-color:#b0c0ee" onclick="editProduct('+i+')">✏ Edit</button> <button class="rmv-btn" onclick="removeProduct('+i+')">✕ Remove</button></td>'
       +'</tr>';
   });
   tbody.innerHTML=html;
